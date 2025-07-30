@@ -188,7 +188,7 @@ With this, when we press enter, the simulation starts! We can also toggle on and
 
 Now to actually have some updates occur...
 
-## Log 3: Uploading and Saving Configs
+## Log 3: Loading Configs
 
 It is nearly time for the fun part - implementing rules! Before that though, I wanted to quickly make a way to enter a starting configuration in string format rather than clicking because debugging will be much easier that way. With this, I will be able to put a file into the universe and it can then put all those cells on the screen.
 
@@ -342,5 +342,345 @@ def __init__(self, cell_size:int, simulation_size:tuple, cell_colour:tuple, grid
 But with this we had a configurations loading!
 
 Now we can easily work on the simulation rules with the config files (I'll save configs later I want to see **Movement**).
+
+## Log 4: Rules
+
+Rule 1 is **underpopulation** - any live cell with fewer than two live neighbours dies. For this, we need a function to get the number of live neighbours a cell has.
+
+```python
+def get_live_neighbours(self, id:str):
+    """Get all live neighbours of a certain cell"""
+    
+    grid_x, grid_y = [int(n) for n in id.split("_")]
+    neighbours = []
+    for dx in [-1, 0, 1]:
+        for dy in [-1, 0, 1]:
+            # If we are at the actual id, skip
+            if (dx == 0 and dy == 0) or \
+                grid_x + dx < 0 or \
+                grid_x + dx > (self.SIM_SIZE.width // self.cell_size) - 1 or \
+                grid_y + dy < 0 or \
+                grid_y + dy > (self.SIM_SIZE.height // self.cell_size) - 1: : continue
+            else:
+                neighbour_id = f"{grid_x + dx}_{grid_y + dy}"
+                if neighbour_id in self.live_cells:
+                    neighbours.append(neighbour_id)
+            
+    return neighbours
+```
+
+(Whoops forgot to add bounds checks):
+
+```python
+def get_live_neighbours(self, id:str):
+    """Get all live neighbours of a certain cell"""
+    
+    grid_x, grid_y = [int(n) for n in id.split("_")]
+    neighbours = []
+    for dx in [-1, 0, 1]:
+        for dy in [-1, 0, 1]:
+            # If we are at the actual id, skip
+            if (dx == 0 and dy == 0) or \
+                grid_x + dx < 0 or \
+                grid_x + dx > (self.SIM_SIZE.width // self.cell_size) - 1 or \
+                grid_y + dy < 0 or \
+                grid_y + dy > (self.SIM_SIZE.height // self.cell_size) - 1: : continue
+            else:
+                neighbour_id = f"{grid_x + dx}_{grid_y + dy}"
+                if neighbour_id in self.live_cells:
+                    neighbours.append(neighbour_id)
+            
+    return neighbours
+```
+
+With this we can now check for underpopulation. Note that for this we need to store the previous state so that we don't update other cells based on other cells that have been updated this frame. 
+
+```python
+def rules(self):
+    """Run all rules on the simulation"""
+    self.underpopulation()
+
+def underpopulation(self):
+    """Underpopulation rule"""
+    for id in self.previous_state:
+        if len(self.get_live_neighbours(id)) < 2:
+            self.print(f"Removing {id}! (Underpopulation)")
+            self.live_cells.remove(id)
+```
+
+Next up: **Harmony**: Any live cell with two or three live neighbours lives on to the next generation.
+
+This is a very similar check, just looking for neighbours == 2 or == 3 but upon checking, we kind of don't need to do anything for this - the other rules will implement it for us which is helpful.
+
+In that case we skip to **Overpopulation**: Any live cell with more than three live neighbours dies:
+
+```python
+def overpopulation(self):
+    """Overpopulation rule"""
+    for id in self.previous_state:
+        if len(self.get_live_neighbours(id)) > 3:
+            self.print(f"Removing {id}! (Overpopulation)")
+            self.live_cells.remove(id)
+```
+
+And lastly - the hardest rule - **Reproduction**: Any dead cell with exactly three live neighbours becomes a live cell. For this I updated my `get_live_neighbours()` so I could get live or dead:
+
+```python
+def get_neighbours(self, id:str):
+        """Get all live or dead neighbours of a certain cell"""
+
+        grid_x, grid_y = [int(n) for n in id.split("_")]
+        neighbours = []
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                # If we are at the actual id, skip
+                if dx == 0 and dy == 0: continue
+                else:
+                    neighbour_id = f"{grid_x + dx}_{grid_y + dy}"
+                    neighbours.append(neighbour_id)
+                
+        return neighbours
+
+    def get_live_neighbours(self, id:str):
+        """Get all live neighbours of a certain cell"""
+        
+        neighbours = self.get_neighbours(id)
+        for neighbour_id in neighbours:
+            if neighbour_id not in self.previous_state:
+                neighbours.remove(neighbour_id)
+                
+        return neighbours
+    
+    def get_dead_neighbours(self, id:str):
+        """Get all live neighbours of a certain cell"""
+        
+        neighbours = self.get_neighbours(id)
+        for neighbour_id in neighbours:
+            if neighbour_id in self.previous_state:
+                neighbours.remove(neighbour_id)
+                
+        return neighbours
+```
+
+Then came the rule:
+
+```python
+def reproduction(self):
+    """Reproduction rule"""
+    neighbours_to_check = set()
+
+    # Generate list of all cells to check
+    for id in self.previous_state:
+        for neighbour in self.get_dead_neighbours(id):
+            neighbours_to_check.add(neighbour)
+        
+    for n in neighbours_to_check:
+        # Check if they have exactly 3 live neighbours
+        if len(self.get_live_neighbours(n)) == 3:
+            # Reproduce!
+            self.print(f"Adding {id} (Reproduction)!")
+            self.live_cells.add(n)
+```
+
+And with that the rules were done!
+
+...and the bugs begin...
+
+The main bug was with the live and dead neighbour functions. Apparently, removing from the neighbours list wasn't working so instead I created a new list to append live/dead neighbours to:
+
+```python
+def get_live_neighbours(self, id:str):
+    """Get all live neighbours of a certain cell"""
+    
+    neighbours = self.get_neighbours(id)
+    live = []
+
+    print(F"prev state: {[e for e in self.previous_state]}")
+
+    for neighbour_id in neighbours:
+        if neighbour_id in self.previous_state:
+            live.append(neighbour_id)
+            
+    return live
+
+def get_dead_neighbours(self, id:str):
+    """Get all dead neighbours of a certain cell"""
+    
+    neighbours = self.get_neighbours(id)
+    dead = []
+
+    for neighbour_id in neighbours:
+        if neighbour_id not in self.previous_state:
+            dead.append(neighbour_id)
+            
+    return dead
+```
+
+And with this we had a working simulation!
+
+<div align="center">
+    <img src="./assets/gospersglidergun.gif" width="400" />
+    <p><em>Figure 4: Recreaction of Gosper's Glider Gun</em></p>
+</div>
+
+
+## Log 5: QoL - Saving Configurations
+
+Now time to polish some stuff I mentioned before, starting with being able to save starting configurations. First I noticed I hadn't added anything to actually validate if a clog file was in the correct format but luckily `RegEx` makes this pretty simple:
+
+```python
+def valid_config(self, config_file):
+    """Checks if we received a valid configuration file"""
+    if config_file != None:
+        config_string = ""
+        path = f"configurations/{config_file}"
+
+        # Open file and read string
+        with open(path) as f:
+            config_string = f.read()
+            f.close()
+
+        # self.print("Read Config String: " + config_string)
+
+        pattern = r'^\d+_\d+,\d+,(?:\d+_\d+(?:/\d+_\d+)*)$'
+
+        matched = re.match(pattern, config_string)
+
+        # Return nothing if we didn't match otherwise return the reconfigured string
+        return (matched, "", "Invalid Configuration") if not matched else (matched, config_string, "Valid")
+
+    else:
+        return False, "", "No File Entered"
+```
+
+Next up, saving. For this we just allow the user to press a key e.g. S, and then it will prompt them to type a file name. From there we convert the starting config information into a string. For this I first implemented some different logic for pausing so that we wouldn't change the config file if we added cells during a pause:
+
+```python
+def toggle_run_simulation(self):
+    """Start and stop the simulation"""
+
+    # If the simulation wasn't running before
+    if not self.sim_running:
+        self.sim_running = not self.sim_running
+        self.sim_paused = not self.sim_paused
+
+        if self.sim_running: self.previous_state = set([e for e in self.live_cells])
+
+        self.print(f"Simulation {"Started" if self.sim_running else "Stopped"}")
+    else:
+        # Pause functionality
+        self.sim_paused = not self.sim_paused
+
+        if not self.sim_paused:
+            self.previous_state = set([e for e in self.live_cells])
+        
+        self.print(f"Simulation {"Paused" if self.sim_paused else "Restarted"}")
+```
+
+Could probably have written it better but it works. From here I spent a copious amount of time implementing saving (there is a lot more to it than you think) and now files can be saved. Main issues came from underthinking honestly. For saving to work intuitively you should be able to:
+
+1. Save a file from a project you started blank
+2. Save a project you loaded to the file you loaded it from
+3. Save an edited, loaded project into a new file so you don't overwrite the old one
+4. Choose to overwrite a file if you want to while saving a new file
+
+I also had some trouble making sure files were made, saved and re-saved with the `.clog` suffix but that's from bad programming on my part I should've only added it at writes and removed it on reads.
+
+All of this resulted in this code:
+
+```python
+    def save_config(self, config_name:str="", new_save=False):
+        """Save config to the configuration folder"""
+
+        def write_to_file(path, save_str) -> bool:
+            # Open file and write string to file
+            with open(path, "w") as f:
+                res = f.write(save_str)
+                f.close()
+
+            return res == len(save_string)
+
+        # Get save string
+        save_string = self.starting_config_to_string()
+
+        # First time they save the config, set flag to true
+        if self.saved_config[0] == False or new_save == True:
+            self.saved_config = (True, config_name)
+
+            path = f"configurations/{config_name}.clog"
+
+            res = write_to_file(path, save_string)
+
+            # Return a check to see if we added the string correctly
+            return res
+        else:
+            # We are just autosaving changes so use saved config
+            path = f"configurations/{self.saved_config[1]}.clog"
+
+            res = write_to_file(path, save_string)
+
+            # Return a check to see if we added the string correctly
+            return res
+    
+    def starting_config_to_string(self) -> str:
+        """Convert starting configuration to a string"""
+        dimensions = f"{self.SIM_SIZE.width}_{self.SIM_SIZE.height}"
+        cell_size = f"{self.cell_size}"
+        string_ids = "/".join(self.starting_config)
+
+        return ",".join([dimensions, cell_size, string_ids])
+```
+
+And in the main loop:
+
+```python
+def save_configuration(universe: Universe, new=False):
+    """Save configuration"""
+    if universe.saved_config[0] == True and new == False:
+        # If we already saved the config, just autosave to that file
+        universe.save_config()
+        print(f"[Main Sim] Saved to {universe.saved_config[1]}")
+    else:
+        valid_save_name = False
+
+        while valid_save_name == False:
+            config_save_name = [
+                inquirer.Text("config_name", 
+                    message="Enter a name for your configuration",
+                    validate=lambda _, x: re.match(r'^[A-Za-z0-9_-]+$', x)
+                )
+            ]
+
+            config_name = inquirer.prompt(config_save_name)["config_name"]
+
+            # Get all .clog files in the directory
+            files = [f for f in os.listdir("configurations") if re.search('.clog', f)]
+
+            # Check if we would be overwriting a file
+            if config_name + ".clog" in files:
+
+                # Ask user if they want to overwrite the file
+                overwrite = [
+                    inquirer.List('overwrite',
+                        message="File exists. Do you want to overwrite?",
+                        choices=["Yes", "No"],
+                        carousel=True
+                    )
+                ]
+
+                ans = inquirer.prompt(overwrite)["overwrite"]
+                
+                if ans == "Yes":
+                    valid_save_name = True
+                else:
+                    valid_save_name = False
+            else:
+                valid_save_name = True
+
+        # Save config
+        universe.save_config(config_name, new)
+```
+
+Once again, could probably be cleaner but half of this stuff I thought of on the job 😭. But now we have all those saving functions which is lovely
 
 [^1]: [Wikipedia](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) - Conway's Game of Life

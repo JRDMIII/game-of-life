@@ -1,7 +1,8 @@
 import pygame
 from universe import Universe
+import re
 
-def main(config):
+def main(config: str):
     # Setting up pygame environment
     pygame.init()
 
@@ -9,7 +10,7 @@ def main(config):
     SCREEN_HEIGHT = 900
     CLOCK = pygame.time.Clock()
     FONT = pygame.font.SysFont("Arial", 10)
-    FPS_CAP = 165
+    FPS_CAP = 15
 
     # Setting up the display
     pygame.display.set_caption("Conway's Game of Life")
@@ -38,15 +39,29 @@ def main(config):
                 mouse_pos = pygame.mouse.get_pos()
                 universe.handle_click(mouse_pos)
             elif event.type == pygame.KEYDOWN:
+
+                # Start simulation
                 if event.key == pygame.K_RETURN:
                     universe.toggle_run_simulation()
-                if event.key == pygame.K_d:
+
+                # Turn on verbose (debug lines)
+                elif event.key == pygame.K_d:
                     universe.toggle_verbose()
+
+                # Save starting configuration
+                elif event.key == pygame.K_s:
+                    mods = pygame.key.get_mods()
+
+                    if mods & pygame.KMOD_SHIFT and mods & pygame.KMOD_CTRL:
+                        save_configuration(universe, True)
+                    else:
+                        save_configuration(universe)
+
 
         # Fill the background of the screen with black
         SCREEN.fill((10, 10, 10))
 
-        universe.draw(SCREEN)
+        universe.update(SCREEN)
 
         # Update the display
         pygame.display.flip()
@@ -55,6 +70,52 @@ def main(config):
         CLOCK.tick(FPS_CAP)
 
     pygame.quit()
+
+def save_configuration(universe: Universe, new=False):
+    """Save configuration"""
+    if universe.saved_config[0] == True and new == False:
+        # If we already saved the config, just autosave to that file
+        universe.save_config()
+        print(f"[Main Sim] Saved to {universe.saved_config[1]}")
+    else:
+        valid_save_name = False
+
+        while valid_save_name == False:
+            config_save_name = [
+                inquirer.Text("config_name", 
+                    message="Enter a name for your configuration",
+                    validate=lambda _, x: re.match(r'^[A-Za-z0-9_-]+$', x)
+                )
+            ]
+
+            config_name = inquirer.prompt(config_save_name)["config_name"]
+
+            # Get all .clog files in the directory
+            files = [f for f in os.listdir("configurations") if re.search('.clog', f)]
+
+            # Check if we would be overwriting a file
+            if config_name + ".clog" in files:
+
+                # Ask user if they want to overwrite the file
+                overwrite = [
+                    inquirer.List('overwrite',
+                        message="File exists. Do you want to overwrite?",
+                        choices=["Yes", "No"],
+                        carousel=True
+                    )
+                ]
+
+                ans = inquirer.prompt(overwrite)["overwrite"]
+                
+                if ans == "Yes":
+                    valid_save_name = True
+                else:
+                    valid_save_name = False
+            else:
+                valid_save_name = True
+
+        # Save config
+        universe.save_config(config_name, new)
 
 if __name__ == "__main__":
     import os
@@ -65,7 +126,7 @@ if __name__ == "__main__":
         os.mkdir("configurations")
 
     # Get all .clog files in the directory
-    files = [f for f in os.listdir("configurations") if ".clog" in f]
+    files = [f for f in os.listdir("configurations") if re.search('.clog', f)]
 
     config = None
 
@@ -80,8 +141,8 @@ if __name__ == "__main__":
         ]
         chosen = inquirer.prompt(choose_config)
     
-    config = chosen["config"]
+    config:str = chosen["config"]
 
     if config == "No Config (Start from Scratch)": config = None
-
+        
     main(config)
