@@ -2,9 +2,24 @@ import pygame
 from types import SimpleNamespace
 
 class Universe():
-    def __init__(self, cell_size:int, simulation_size:tuple, cell_colour:tuple, grid_colour:tuple):
+    def __init__(self, cell_size:int, simulation_size:tuple, cell_colour:tuple, grid_colour:tuple, config:str):
+        if self.valid_config(config):
+            self.load_config(config, cell_colour, grid_colour)
+        else:
+            self.print("No Config File >> Starting Blank Universe")
+            self.setup_universe(
+                cell_size,
+                simulation_size,
+                cell_colour,
+                grid_colour
+            )
+    
+    def setup_universe(self, cell_size:int, simulation_size:tuple, cell_colour:tuple, grid_colour:tuple, ids:list=[]):
+        """Sets up all universe class attributes"""
+
         # Set of all cells (so we can't accidentally include duplicates)
-        self.live_cells = set()
+        self.live_cells = set(ids)
+
         self.cell_colour = cell_colour
         self.grid_colour = grid_colour
 
@@ -14,8 +29,44 @@ class Universe():
 
         # Size of a single cell
         self.cell_size = cell_size
+
         self.verbose = False
         self.sim_running = False
+        
+    def valid_config(self, config_file):
+        """Checks if we received a valid configuration file"""
+        return config_file != None
+    
+
+    def load_config(self, config_file, cell_colour, grid_colour):
+        """Loads a configuration file into the universe"""
+
+        config_string = ""
+        path = f"configurations/{config_file}"
+
+        # Open file and read string
+        with open(path) as f:
+            config_string = f.read()
+            f.close()
+
+        self.print("Read Config String: " + config_string)
+
+        # Splitting config into separate parts
+        parts = config_string.split(",")
+        dimensions, cell_size, ids = parts
+
+        # Converting strings into data
+        dimensions = (int(n) for n in dimensions.split("_"))
+        cell_size = int(cell_size)
+        ids = ids.split("/")
+
+        self.setup_universe(
+            cell_size=cell_size,
+            simulation_size=dimensions,
+            cell_colour=cell_colour,
+            grid_colour=grid_colour,
+            ids=ids
+        )
     
     def coords_to_id(self, coordinate: tuple) -> str:
         """Converts coordinates into a string id"""
@@ -50,12 +101,15 @@ class Universe():
     def handle_click(self, coords:tuple) -> None:
         """Handle a user clicking on the grid"""
 
-        # Convert coordinate to ID
-        id = self.coords_to_id(coords)
+        if not self.sim_running:
+            # Convert coordinate to ID
+            id = self.coords_to_id(coords)
 
-        # Check if we already had this cell in
-        if id in self.live_cells: self.live_cells.remove(id)
-        else: self.live_cells.add(id)
+            # Check if we already had this cell in
+            if id in self.live_cells: self.live_cells.remove(id)
+            else: self.live_cells.add(id)
+        else:
+            self.print("Cannot Update Config During Sim Runtime")
         
     def draw_cells(self, screen) -> None:
         """Draw currently live cells to the screen"""
@@ -78,12 +132,12 @@ class Universe():
         
     def toggle_verbose(self):
         """Toggles whether we print debug statements"""
-        
+
         self.verbose = not self.verbose
         print(f"Verbose Mode: {"On" if self.verbose else "Off"}")
     
-    def print(self, msg: str):
+    def print(self, msg: str, bypass=False):
         """Prints custom message if we are in verbose"""
 
-        if self.verbose:
+        if self.verbose or bypass:
             print(f"[Universe] {msg}")
