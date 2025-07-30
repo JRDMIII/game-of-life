@@ -341,6 +341,6 @@ def __init__(self, cell_size:int, simulation_size:tuple, cell_colour:tuple, grid
 
 But with this we had a configurations loading!
 
-Now we can easily work on the simulation rules with the config files.
+Now we can easily work on the simulation rules with the config files (I'll save configs later I want to see **Movement**).
 
 [^1]: [Wikipedia](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) - Conway's Game of Life
