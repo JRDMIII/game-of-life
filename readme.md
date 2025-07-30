@@ -1,7 +1,7 @@
 # Dev Log: Conway's Game of Life
 
 <div align="center">
-    <img src="./assets/smiley.gif" width="400" />
+    <img src="./assets/smiley.gif" width="600" />
 </div>
 
 ## The Theory
