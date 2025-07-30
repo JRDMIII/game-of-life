@@ -62,7 +62,9 @@ class Universe():
                 config_string = f.read()
                 f.close()
 
-            # self.print("Read Config String: " + config_string)
+            config_string = config_string.replace("\n", "")
+
+            self.print("Read Config String: " + config_string)
 
             pattern = r'^\d+_\d+,\d+,(?:\d+_\d+(?:/\d+_\d+)*)$'
 
@@ -181,8 +183,8 @@ class Universe():
         """Draws the updated universe"""
 
         # Draw the grid if we are not running
-        if self.sim_paused:
-            self.draw_grid(screen)
+        # if self.sim_paused:
+        #     self.draw_grid(screen)
 
         # Draw the live cells
         self.draw_cells(screen)

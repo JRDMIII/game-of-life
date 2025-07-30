@@ -90,16 +90,16 @@ def main(config: str):
         spacing = 15
         start = 10
 
-        if not universe.sim_paused:
-            SCREEN.blit(sim_speed_text, (10, start))
+        # if not universe.sim_paused:
+        #     SCREEN.blit(sim_speed_text, (10, start))
 
         generation_text = FONT.render(f"Generation: {universe.generation}", True, (255, 255, 255))
         population_text = FONT.render(f"Population: {len(universe.live_cells)} cells", True, (255, 255, 255))
         stale_text = FONT.render(f"Simulation Stale: {universe.sim_stale}", True, (255, 255, 255))
 
-        SCREEN.blit(generation_text, (10, start + spacing))
-        SCREEN.blit(population_text, (10, start + (2 * spacing)))
-        SCREEN.blit(stale_text, (10, start + (3 * spacing)))
+        # SCREEN.blit(generation_text, (10, start + spacing))
+        # SCREEN.blit(population_text, (10, start + (2 * spacing)))
+        # SCREEN.blit(stale_text, (10, start + (3 * spacing)))
 
         # Update the display
         pygame.display.flip()
