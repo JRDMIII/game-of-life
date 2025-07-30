@@ -76,14 +76,14 @@ That gives us this:
 
 <div align="center">
     <img src="./assets/grid.png" width="400" />
-    <p><em>Figure 1: Boids simulation in Python</em></p>
+    <p><em>Figure 1: Grid!</em></p>
 </div>
 
 With a more realistic grid size and a darker colour so the grid isn't so overpowering we get this something like this:
 
 <div align="center">
     <img src="./assets/new_grid.png" width="400" />
-    <p><em>Figure 1: Boids simulation in Python</em></p>
+    <p><em>Figure 2: Grid with smaller cells and less intense colour</em></p>
 </div>
 
 With this we now have both a grid and the ability to click and get a grid cell's id.
@@ -133,5 +133,10 @@ From here I added the `handle_click()` function to the events of the pygame loop
 ```
 
 And now we have the ability to add squares to the grid to create our starting configuration!
+
+<div align="center">
+    <img src="./assets/cell_placement.gif" width="400" />
+    <p><em>Figure 3: Placing cells on the grid</em></p>
+</div>
 
 [^1]: [Wikipedia](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) - Conway's Game of Life
