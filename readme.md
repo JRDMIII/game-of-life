@@ -1,4 +1,8 @@
-# Dev Log: Boids
+# Dev Log: Conway's Game of Life
+
+<div align="center">
+    <img src="./assets/smiley.gif" width="400" />
+</div>
 
 ## The Theory
 Conway's game of life is the equivalent of a LeBron James in computer science. Everyone knows about it and it it's bag is too deep. So I decided to make that my next project because why not! This is probably going to be a one-session project but always work a good dev log. Also going to try reference websites I find information on but we'll see how long I can be bothered with that.
