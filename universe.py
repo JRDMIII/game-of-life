@@ -14,6 +14,8 @@ class Universe():
 
         # Size of a single cell
         self.cell_size = cell_size
+        self.verbose = False
+        self.sim_running = False
     
     def coords_to_id(self, coordinate: tuple) -> str:
         """Converts coordinates into a string id"""
@@ -39,7 +41,8 @@ class Universe():
         """Draws the updated universe"""
 
         # Draw the grid
-        self.draw_grid(screen)
+        if not self.sim_running:
+            self.draw_grid(screen)
 
         # Draw the live cells
         self.draw_cells(screen)
@@ -66,3 +69,21 @@ class Universe():
             # Draw rectangle at this coordinate
             rect = pygame.Rect(x, y, self.cell_size, self.cell_size)
             pygame.draw.rect(screen, self.cell_colour, rect)
+        
+    def toggle_run_simulation(self):
+        """Start and stop the simulation"""
+
+        self.sim_running = not self.sim_running
+        self.print(f"Simulation {"Started" if self.sim_running else "Stopped"}")
+        
+    def toggle_verbose(self):
+        """Toggles whether we print debug statements"""
+        
+        self.verbose = not self.verbose
+        print(f"Verbose Mode: {"On" if self.verbose else "Off"}")
+    
+    def print(self, msg: str):
+        """Prints custom message if we are in verbose"""
+
+        if self.verbose:
+            print(f"[Universe] {msg}")

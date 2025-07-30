@@ -35,6 +35,11 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_pos = pygame.mouse.get_pos()
             universe.handle_click(mouse_pos)
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                universe.toggle_run_simulation()
+            if event.key == pygame.K_d:
+                universe.toggle_verbose()
 
     # Fill the background of the screen with black
     SCREEN.fill((10, 10, 10))

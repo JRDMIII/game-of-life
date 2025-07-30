@@ -139,4 +139,53 @@ And now we have the ability to add squares to the grid to create our starting co
     <p><em>Figure 3: Placing cells on the grid</em></p>
 </div>
 
+## Log 2: Starting the Sim
+
+Now we can set up the simulation, we need to be able to start it which is quite easy.
+
+We listen out for the user pressing the `Enter` key (I like the enter keyfor this) and when it is pressed we switch a flag in the simulation from off to on. This will:
+ - Disable the ability to add cells to the grid on click
+ - Begin running the rules of the simulation
+ - Stop showing grid to make things look nicer during the sim
+
+I would also like to add keybinds to speed up/slow down the simulation once it has started and write to the screen the current speed of the sim but we can see about that later as a polish.
+
+For the basic function of starting and stopping, I created a variable in the universe called `sim_running` which can be toggled through pygame events.
+
+```python
+def toggle_run_simulation(self):
+    """Start and stop the simulation"""
+
+    self.sim_running = not self.sim_running
+    print(f"Simulation {"Started" if self.sim_running else "Stopped"}")
+```
+
+```python
+for event in pygame.event.get():
+    # ...
+    elif event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_KP_ENTER:
+            universe.toggle_run_simulation()
+```
+
+Also added a little debug code to the universe at this point so I could turn on and off print statements in the universe class:
+
+```python
+def toggle_verbose(self):
+    """Toggles whether we print debug statements"""
+
+    self.verbose = not self.verbose
+    print(f"Verbose Mode: {"On" if self.verbose else "Off"}")
+
+def print(self, msg: str):
+    """Prints custom message if we are in verbose"""
+    
+    if self.verbose:
+        print(f"[Universe] {msg}")
+```
+
+With this, when we press enter, the simulation starts! We can also toggle on and off debugging using "D". I will look into speed up and slow down once we have some things to check
+
+Now to actually have some updates occur...
+
 [^1]: [Wikipedia](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) - Conway's Game of Life
