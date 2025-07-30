@@ -30,6 +30,8 @@ class Universe():
         self.live_cells = set(ids)
         self.starting_config = set(ids)
 
+        self.generation = 0
+
         self.cell_colour = cell_colour
         self.grid_colour = grid_colour
 
@@ -39,6 +41,7 @@ class Universe():
 
         # Size of a single cell
         self.cell_size = cell_size
+        self.sim_stale = False
 
         self.verbose = False
         self.sim_running = False
@@ -162,6 +165,14 @@ class Universe():
             # Update previous state
             self.rules()
 
+            self.generation += 1
+
+            if self.previous_state == self.live_cells:
+                # Reached a stale state (no periodic cells or activity)
+                self.sim_stale = True
+                self.sim_running = False
+                self.sim_paused = True
+
             self.previous_state = set([e for e in self.live_cells])
 
         self.draw(screen)
@@ -180,6 +191,8 @@ class Universe():
         """Handle a user clicking on the grid"""
 
         if self.sim_paused:
+            self.sim_stale = False
+
             # Convert coordinate to ID
             id = self.coords_to_id(coords)
 

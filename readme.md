@@ -683,4 +683,96 @@ def save_configuration(universe: Universe, new=False):
 
 Once again, could probably be cleaner but half of this stuff I thought of on the job 😭. But now we have all those saving functions which is lovely
 
+## Log 6: QoL - Speed Up / Slow Down and UI
+
+Next we go back and implement the speed up and slow down functions. I think the only way to do this is to change the clock in pygame. For reference, I'm only including x1, x2, x4, x8, x16 and x32 speeds with the number 3 being the lowest speed (as in, what I input to the clock). I also need to make sure that during setup and pause the clock speed is max.
+
+```python
+sim_speeds = [
+    3,  # x1
+    6,  # x2
+    12, # x4
+    24, # x8
+    48, # x16
+    96  # x32
+]
+edit_speed = 60
+current_speed = 0
+
+# ... Inside main loop
+while running:
+    # ...
+    # Slow down simulation
+    if event.key == pygame.K_k:
+        if universe.sim_running:
+            current_speed = max(current_speed - 1, 0)
+
+    # Speed up simulation
+    elif event.key == pygame.K_l:
+        if universe.sim_running:
+            current_speed = min(current_speed + 1, len(sim_speeds) - 1)
+
+    # Start simulation
+    elif event.key == pygame.K_RETURN:
+        current_speed = 2
+        universe.toggle_run_simulation()
+
+    # Show current speed
+    sim_speed_text = FONT.render(f"Simulation Speed: x{2**current_speed:.0f}", True, (255, 255, 255))
+    
+    if not universe.sim_paused:
+        SCREEN.blit(sim_speed_text, (10, 10))
+    
+    # ...
+    FPS = edit_speed if universe.sim_paused else sim_speeds[current_speed]
+
+    # Cap frame rate
+    CLOCK.tick(FPS)
+
+```
+
+And with this we got speed changes!
+
+<div align="center">
+    <img src="./assets/speed.gif" width="400" />
+    <p><em>Figure 1: Simulation Speeds</em></p>
+</div>
+
+I also wanted to quickly add some UI to this for the current generation and the population of the simulation. All this really needed was a counter in the universe to increment every update while the sim is running and not paused and then some text to display showing the information. Population of live cells is just the length of the set of live cells in the `Universe` object. Also felt like adding some functionality where the sim pauses as soon as you get to a stale state (no movement or periodic cell activity)
+
+```python
+spacing = 15
+start = 10
+
+if not universe.sim_paused:
+    SCREEN.blit(sim_speed_text, (10, start))
+
+generation_text = FONT.render(f"Generation: {universe.generation}", True, (255, 255, 255))
+population_text = FONT.render(f"Population: {len(universe.live_cells)} cells", True, (255, 255, 255))
+stale_text = FONT.render(f"Simulation Stale: {universe.sim_stale}", True, (255, 255, 255))
+
+SCREEN.blit(generation_text, (10, start + spacing))
+SCREEN.blit(population_text, (10, start + (2 * spacing)))
+SCREEN.blit(stale_text, (10, start + (3 * spacing)))
+```
+
+Yes - I added code to space the text instead of just inputting numbers. Make your life harder so you make your life easier. And the stale check was quite simple:
+
+```python
+self.generation += 1
+
+if self.previous_state == self.live_cells:
+    # Reached a stale state (no periodic cells or activity)
+    self.sim_stale = True
+    self.sim_running = False
+    self.sim_paused = True
+```
+
+Also did a quick sanity check and loaded the same configuration multiple times to ensure I get the same result everytime (so there is no random changes occurring between saves).
+
+And with that, I had created a simulation I was pretty happy with! There are a few other things to change like updating the resolution of the window when you load a configuration and giving more customisation options.
+I could also colour cells based on number of neighbours and possibly get some cool visuals so we'll see where this goes.
+
+For now if you want to run a simulation in a different resolution you just
+
 [^1]: [Wikipedia](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) - Conway's Game of Life

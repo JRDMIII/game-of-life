@@ -6,11 +6,10 @@ def main(config: str):
     # Setting up pygame environment
     pygame.init()
 
-    SCREEN_WIDTH = 1500
-    SCREEN_HEIGHT = 900
+    SCREEN_WIDTH = 1800
+    SCREEN_HEIGHT = 1000
     CLOCK = pygame.time.Clock()
-    FONT = pygame.font.SysFont("Arial", 10)
-    FPS_CAP = 15
+    FONT = pygame.font.SysFont("Arial", 12)
 
     # Setting up the display
     pygame.display.set_caption("Conway's Game of Life")
@@ -30,6 +29,17 @@ def main(config: str):
         config=config
     )
 
+    sim_speeds = [
+        3,  # x1
+        6,  # x2
+        12, # x4
+        24, # x8
+        48, # x16
+        96  # x32
+    ]
+    edit_speed = 60
+    current_speed = 0
+
     while running:
         # Event handling
         for event in pygame.event.get():
@@ -40,8 +50,19 @@ def main(config: str):
                 universe.handle_click(mouse_pos)
             elif event.type == pygame.KEYDOWN:
 
+                # Slow down simulation
+                if event.key == pygame.K_k:
+                    if universe.sim_running:
+                        current_speed = max(current_speed - 1, 0)
+                
+                # Speed up simulation
+                elif event.key == pygame.K_l:
+                    if universe.sim_running:
+                        current_speed = min(current_speed + 1, len(sim_speeds) - 1)
+
                 # Start simulation
-                if event.key == pygame.K_RETURN:
+                elif event.key == pygame.K_RETURN:
+                    current_speed = 2
                     universe.toggle_run_simulation()
 
                 # Turn on verbose (debug lines)
@@ -63,11 +84,30 @@ def main(config: str):
 
         universe.update(SCREEN)
 
+        # Show current speed
+        sim_speed_text = FONT.render(f"Simulation Speed: x{2**current_speed}", True, (255, 255, 255))
+        
+        spacing = 15
+        start = 10
+
+        if not universe.sim_paused:
+            SCREEN.blit(sim_speed_text, (10, start))
+
+        generation_text = FONT.render(f"Generation: {universe.generation}", True, (255, 255, 255))
+        population_text = FONT.render(f"Population: {len(universe.live_cells)} cells", True, (255, 255, 255))
+        stale_text = FONT.render(f"Simulation Stale: {universe.sim_stale}", True, (255, 255, 255))
+
+        SCREEN.blit(generation_text, (10, start + spacing))
+        SCREEN.blit(population_text, (10, start + (2 * spacing)))
+        SCREEN.blit(stale_text, (10, start + (3 * spacing)))
+
         # Update the display
         pygame.display.flip()
         
+        FPS = edit_speed if universe.sim_paused else sim_speeds[current_speed]
+
         # Cap frame rate
-        CLOCK.tick(FPS_CAP)
+        CLOCK.tick(FPS)
 
     pygame.quit()
 
