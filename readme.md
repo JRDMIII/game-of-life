@@ -777,6 +777,6 @@ Also did a quick sanity check and loaded the same configuration multiple times t
 And with that, I had created a simulation I was pretty happy with! There are a few other things to change like updating the resolution of the window when you load a configuration and giving more customisation options.
 I could also colour cells based on number of neighbours and possibly get some cool visuals so we'll see where this goes.
 
-For now if you want to run a simulation in a different resolution you just
+For now if you want to run a simulation in a different resolution you just need to change the resolution in main.py
 
 [^1]: [Wikipedia](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life) - Conway's Game of Life
